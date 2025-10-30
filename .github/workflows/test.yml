@@ -3,26 +3,55 @@ name: Test Phase
 on:
   workflow_call:
     secrets:
-      SONARQUBE_TOKEN:
+      DOCKERHUB_USERNAME:
         required: true
+      SONAR_TOKEN:
+        required: false
+      SONAR_HOST_URL:
+        required: false
 
 jobs:
+  # Sonar job runs only if a SONAR_TOKEN is provided
   sonar:
+    if: ${{ secrets.SONAR_TOKEN != '' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: SonarQube Backend
+      - name: SonarQube Scan (Backend)
         uses: sonarsource/sonarqube-scan-action@v3
         with:
-          host-url: http://98.93.190.161:9000
-          login: ${{ secrets.SONARQUBE_TOKEN }}
+          host-url: ${{ secrets.SONAR_HOST_URL || 'http://98.93.190.161:9000' }}
+          login: ${{ secrets.SONAR_TOKEN }}
           projectBaseDir: backend
 
-      - name: SonarQube Frontend
+      - name: SonarQube Scan (Frontend)
         uses: sonarsource/sonarqube-scan-action@v3
         with:
-          host-url: http://98.93.190.161:9000
-          login: ${{ secrets.SONARQUBE_TOKEN }}
+          host-url: ${{ secrets.SONAR_HOST_URL || 'http://98.93.190.161:9000' }}
+          login: ${{ secrets.SONAR_TOKEN }}
           projectBaseDir: frontend
+
+  trivy:
+    needs: [sonar]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull backend image
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest || true
+
+      - name: Pull frontend image
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest || true
+
+      - name: Run Trivy scan on backend image
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
+          format: table
+
+      - name: Run Trivy scan on frontend image
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
+          format: table
 

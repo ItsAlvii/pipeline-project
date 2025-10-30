@@ -16,12 +16,15 @@ jobs:
     needs: build_phase
     uses: ./.github/workflows/test.yml
     secrets:
-      SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   deploy_phase:
     needs: test_phase
     uses: ./.github/workflows/deploy.yml
     secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_USER: ${{ secrets.SSH_USER }}
       EC2_STAGE_HOST: ${{ secrets.EC2_STAGE_HOST }}
