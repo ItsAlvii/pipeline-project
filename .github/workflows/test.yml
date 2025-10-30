@@ -36,6 +36,8 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: http://98.93.190.161:9000
+          SONAR_PROJECT_KEY: pipeline-project
+          SONAR_PROJECT_NAME: pipeline-project
 
       - name: SonarQube Scan (Frontend)
         if: steps.check.outputs.token == 'true'
@@ -45,6 +47,8 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: http://98.93.190.161:9000
+          SONAR_PROJECT_KEY: pipeline-project
+          SONAR_PROJECT_NAME: pipeline-project
 
   trivy:
     runs-on: ubuntu-latest
@@ -57,13 +61,13 @@ jobs:
         run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest || true
 
       - name: Run Trivy scan on backend image
-        uses: aquasecurity/trivy-action@v0.20.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
           format: table
 
       - name: Run Trivy scan on frontend image
-        uses: aquasecurity/trivy-action@v0.20.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
           format: table
