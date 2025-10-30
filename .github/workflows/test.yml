@@ -1,0 +1,55 @@
+name: Test Phase
+
+on:
+  workflow_call:
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      SONAR_TOKEN:
+        required: false
+      SONAR_HOST_URL:
+        required: false
+
+jobs:
+  sonar:
+    name: sonar
+    runs-on: ubuntu-latest
+    # only run Sonar if a token is provided
+    if: ${{ secrets.SONAR_TOKEN != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: SonarQube Scan (Backend)
+        uses: sonarsource/sonarqube-scan-action@v3
+        with:
+          host-url: ${{ secrets.SONAR_HOST_URL || 'http://98.93.190.161:9000' }}
+          login: ${{ secrets.SONAR_TOKEN }}
+          projectBaseDir: backend
+
+      - name: SonarQube Scan (Frontend)
+        uses: sonarsource/sonarqube-scan-action@v3
+        with:
+          host-url: ${{ secrets.SONAR_HOST_URL || 'http://98.93.190.161:9000' }}
+          login: ${{ secrets.SONAR_TOKEN }}
+          projectBaseDir: frontend
+
+  trivy:
+    name: trivy
+    runs-on: ubuntu-latest
+    needs: [sonar]
+    steps:
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-backend:latest
+          format: table
+          exit-code: '1'
+
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@v0.20.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-frontend:latest
+          format: table
+          exit-code: '1'
+

@@ -7,43 +7,27 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build_phase:
     uses: ./.github/workflows/build.yml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  sonar:
-    needs: build
-    uses: ./.github/workflows/test-sonar.yml
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  trivy:
-    needs: sonar
-    uses: ./.github/workflows/test-trivy.yml
+  test_phase:
+    needs: build_phase
+    uses: ./.github/workflows/test.yml
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-  deploy-stage:
-    needs: trivy
-    uses: ./.github/workflows/deploy-stage.yml
+  deploy_phase:
+    needs: test_phase
+    uses: ./.github/workflows/deploy.yml
     secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_USER: ${{ secrets.SSH_USER }}
       EC2_STAGE_HOST: ${{ secrets.EC2_STAGE_HOST }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-
-  approval:
-    needs: deploy-stage
-    uses: ./.github/workflows/deploy-approval.yml
-
-  deploy-prod:
-    needs: approval
-    uses: ./.github/workflows/deploy-prod.yml
-    secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      SSH_USER: ${{ secrets.SSH_USER }}
       EC2_PROD_HOST: ${{ secrets.EC2_PROD_HOST }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
