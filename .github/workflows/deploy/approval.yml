@@ -1,4 +1,4 @@
-name: Manual Approval
+name: Manual Approval Step
 
 on:
   workflow_call:
@@ -7,12 +7,10 @@ jobs:
   approval:
     runs-on: ubuntu-latest
     steps:
-      - name: Await manual approval
+      - name: Wait for manual approval
         uses: trstringer/manual-approval@v1
         with:
           secret: ${{ github.token }}
-          approvers: your-github-username
+          approvers: ItsAlvii
           minimum-approvals: 1
-          issue-title: "Approve Production Deployment"
-          issue-body: "Approve to deploy to Production?"
 

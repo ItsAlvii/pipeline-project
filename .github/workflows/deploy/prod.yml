@@ -1,4 +1,4 @@
-name: Production Deploy
+name: Deploy to Production
 
 on:
   workflow_call:
@@ -6,22 +6,18 @@ on:
 jobs:
   deploy-prod:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Deploy to Production EC2
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_PROD_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-backend:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-frontend:latest
             docker stop backend frontend || true
             docker rm backend frontend || true
-            docker network create app-network 2>/dev/null || true
-
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/demo-backend:latest
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/demo-frontend:latest
-
-            docker run -d --name backend --network app-network ${{ secrets.DOCKERHUB_USERNAME }}/demo-backend:latest
-            docker run -d --name frontend --network app-network -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/demo-frontend:latest
+            docker run -d --name backend -p 3000:3000 ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-backend:latest
+            docker run -d --name frontend -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-frontend:latest
 
