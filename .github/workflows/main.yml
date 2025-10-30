@@ -2,8 +2,7 @@ name: CI/CD Pipeline (orchestra)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -18,7 +17,7 @@ jobs:
     uses: ./.github/workflows/test.yml
     secrets:
       SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
-      TRIVY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy_phase:
     needs: test_phase

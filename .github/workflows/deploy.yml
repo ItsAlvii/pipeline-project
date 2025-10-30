@@ -3,8 +3,6 @@ name: Deploy Phase
 on:
   workflow_call:
     secrets:
-      DOCKERHUB_USERNAME:
-        required: true
       SSH_PRIVATE_KEY:
         required: true
       SSH_USER:
@@ -15,53 +13,19 @@ on:
         required: true
 
 jobs:
-  stage:
-    name: stage
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Staging EC2
-        uses: appleboy/ssh-action@v1.8.0
-        with:
-          host: ${{ secrets.EC2_STAGE_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-backend:latest || true
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-frontend:latest || true
-            docker stop backend frontend || true
-            docker rm backend frontend || true
-            docker network create app-network 2>/dev/null || true
-            docker run -d --name backend --network app-network ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-backend:latest
-            docker run -d --name frontend --network app-network -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-frontend:latest
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_STAGE_HOST }} >> ~/.ssh/known_hosts
 
-  approval:
-    name: approval
-    runs-on: ubuntu-latest
-    needs: stage
-    steps:
-      - name: Manual approval (pause)
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.token }}
-          minimum-approvals: 1
+      - name: Deploy to EC2 (Stage)
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.EC2_STAGE_HOST }} "docker pull myapp:latest && docker run -d myapp:latest"
 
-  prod:
-    name: prod
-    runs-on: ubuntu-latest
-    needs: approval
-    steps:
-      - name: Deploy to Production EC2
-        uses: appleboy/ssh-action@v1.8.0
-        with:
-          host: ${{ secrets.EC2_PROD_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-backend:latest || true
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-frontend:latest || true
-            docker stop backend frontend || true
-            docker rm backend frontend || true
-            docker network create app-network 2>/dev/null || true
-            docker run -d --name backend --network app-network ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-backend:latest
-            docker run -d --name frontend --network app-network -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/pipeline-frontend:latest
+      - name: Deploy to EC2 (Prod)
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.EC2_PROD_HOST }} "docker pull myapp:latest && docker run -d myapp:latest"
 
