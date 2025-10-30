@@ -17,7 +17,6 @@ jobs:
     uses: ./.github/workflows/test.yml
     secrets:
       SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy_phase:
     needs: test_phase
