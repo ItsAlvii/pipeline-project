@@ -1,0 +1,27 @@
+name: Staging Deploy
+
+on:
+  workflow_call:
+
+jobs:
+  deploy-stage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Staging EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_STAGE_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker stop backend frontend || true
+            docker rm backend frontend || true
+            docker network create app-network 2>/dev/null || true
+
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/demo-backend:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/demo-frontend:latest
+
+            docker run -d --name backend --network app-network ${{ secrets.DOCKERHUB_USERNAME }}/demo-backend:latest
+            docker run -d --name frontend --network app-network -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/demo-frontend:latest
+

@@ -1,0 +1,38 @@
+name: CI/CD Pipeline (orchestra)
+
+on:
+[?12;2$y  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # 1) Build images
+  build:
+    uses: ./.github/workflows/build/build.yml
+
+  # 2) SonarQube analysis (runs after build)
+  sonar:
+    needs: build
+    uses: ./.github/workflows/test/sonar.yml
+
+  # 3) Trivy scan (runs after sonar)
+  trivy:
+    needs: sonar
+    uses: ./.github/workflows/test/trivy.yml
+
+  # 4) Deploy to staging (runs after trivy)
+  deploy-stage:
+    needs: trivy
+    uses: ./.github/workflows/deploy/stage.yml
+
+  # 5) Admin approval step (runs after staging)
+  approval:
+    needs: deploy-stage
+    uses: ./.github/workflows/deploy/approval.yml
+
+  # 6) Deploy to production (runs after approval)
+  deploy-prod:
+    needs: approval
+    uses: ./.github/workflows/deploy/prod.yml
+

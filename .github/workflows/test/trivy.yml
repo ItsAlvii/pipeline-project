@@ -1,0 +1,20 @@
+name: Trivy Scan
+
+on:
+  workflow_call:
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/demo-backend:latest
+
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/demo-frontend:latest
+
