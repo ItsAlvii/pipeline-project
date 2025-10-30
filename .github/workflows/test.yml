@@ -13,7 +13,7 @@ on:
 jobs:
   sonar:
     runs-on: ubuntu-latest
-    continue-on-error: true  # allows skipping if SONAR_TOKEN not set
+    continue-on-error: true
     steps:
       - name: Check if SONAR_TOKEN is provided
         id: check
@@ -30,19 +30,21 @@ jobs:
 
       - name: SonarQube Scan (Backend)
         if: steps.check.outputs.token == 'true'
-        uses: sonarsource/sonarqube-scan-action@v3
+        uses: sonarsource/sonarqube-scan-action@v4
         with:
-          host-url: ${{ secrets.SONAR_HOST_URL || 'http://98.93.190.161:9000' }}
-          login: ${{ secrets.SONAR_TOKEN }}
           projectBaseDir: backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'http://98.93.190.161:9000' }}
 
       - name: SonarQube Scan (Frontend)
         if: steps.check.outputs.token == 'true'
-        uses: sonarsource/sonarqube-scan-action@v3
+        uses: sonarsource/sonarqube-scan-action@v4
         with:
-          host-url: ${{ secrets.SONAR_HOST_URL || 'http://98.93.190.161:9000' }}
-          login: ${{ secrets.SONAR_TOKEN }}
           projectBaseDir: frontend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL || 'http://98.93.190.161:9000' }}
 
   trivy:
     runs-on: ubuntu-latest
@@ -55,13 +57,13 @@ jobs:
         run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest || true
 
       - name: Run Trivy scan on backend image
-        uses: aquasecurity/trivy-action@v0.20.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
           format: table
 
       - name: Run Trivy scan on frontend image
-        uses: aquasecurity/trivy-action@v0.20.0
+        uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
           format: table
