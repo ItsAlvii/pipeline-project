@@ -1,24 +1,35 @@
-name: Build Phase
+name: Build and Push Docker Images
 
 on:
-  workflow_call:
-    secrets:
-      DOCKERHUB_USERNAME:
-        required: true
-      DOCKERHUB_TOKEN:
-        required: true
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Log in to Docker Hub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-      - name: Build image
-        run: docker build -t myapp:latest .
-      - name: Push image
+
+      - name: Build and tag backend image
         run: |
-          docker tag myapp:latest ${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/myapp:latest
+          cd backend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest .
+          cd ..
+
+      - name: Build and tag frontend image
+        run: |
+          cd frontend
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest .
+          cd ..
+
+      - name: Push images to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/frontend:latest
 
